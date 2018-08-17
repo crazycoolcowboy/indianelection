@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title></title>
+	<title>India</title>
 	<style>
 		#main {
 			display: flex;
@@ -32,7 +32,7 @@
 	</style>
 </head>
 <body>
-	<h1>National Parties in India</h1>
+	<h1>National Parties in General Elections</h1>
 	<div id="main">
 	<svg></svg>	
 	<ul id="legends"> </div>
@@ -41,7 +41,7 @@
 		<label>Election Year <span id="year"></span></label>
 	</div>
 </body>
-<script src="lib/d3.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js"></script>
 <script>
 	const width = 600,
 		height = 500;
@@ -56,18 +56,14 @@
 	const rscale = d3.scaleLinear()
 					.range(['20px','60px']);
 	const colorScale = d3.scaleOrdinal(d3.schemeCategory20.concat(d3.schemeCategory20b));
-d3.csv('indianparites.csv', format, data =>{
+d3.csv('election_result.csv', format, data =>{
 	houseData = data;
-	//year = d3.extent(data, d => d.year);
 	data.map(d => {
 		years.add(d.year);
 		partyCode.add(d.partyCode);
 	});
 	colorScale.domain(partyCode);
 	startTimer();
-	/*d3.select('#range')
-		.attr('min',year[0])
-		.attr('max',year[1]);*/
 });
 
 function format(d) {
