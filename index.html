@@ -4,6 +4,9 @@
 	<meta charset="UTF-8">
 	<title>India</title>
 	<style>
+		body {
+			font-family: sans-serif;
+		}
 		#main {
 			display: flex;
 		}
@@ -29,6 +32,14 @@
 			font-size: 1.6em;
 			text-align: center;
 		}
+		text {
+			font-size: 0.5em;
+			font-weight: bold;
+			transform-origin: center;
+			fill: white;
+			stroke: white;
+			stroke-width: 0.5;
+		}
 	</style>
 </head>
 <body>
@@ -45,6 +56,10 @@
 <script>
 	const width = 600,
 		height = 500;
+	let partyColor  = {
+		BJP : '#ff9933',
+		INC:  '#138808'
+	}
 	let houseData = [];
 	let years = new Set();
 	let partyCode = new Set();
@@ -55,72 +70,85 @@
 		.attr('height', height);
 	const rscale = d3.scaleLinear()
 					.range(['20px','60px']);
-	const colorScale = d3.scaleOrdinal(d3.schemeCategory20.concat(d3.schemeCategory20b));
-d3.csv('election_result.csv', format, data =>{
-	houseData = data;
-	data.map(d => {
-		years.add(d.year);
-		partyCode.add(d.partyCode);
-	});
-	colorScale.domain(partyCode);
-	startTimer();
-});
-
-function format(d) {
-	return {
-		partyCode : d.partyCode,
-		partyName: d.partyName,
-		seatswon: +d.seatswon,
-		year: +d.electionYear
-	}; 
-}
-
-function drawScatterPlot(data, year) {
-	const result = data.filter(d => d.year === year);
-	rscale.domain(d3.extent(result, d => d.seatswon));
-	legends.innerHTML = result.map(d => `<li><span style="background-color:${colorScale(d.partyCode)};"></span>${d.partyName}</li>`).join('');
-    const simulation = d3.forceSimulation(result);
-
-	simulation.force('center', d3.forceCenter(width / 2, height / 2))
-		.force('charge', d3.forceManyBody())
-		.on('tick', () => {
-			const circle = svg.selectAll('circle')
-				.data(result, d => d.partyCode);
-			circle.enter()
-				.append('circle')
-				.attr('fill', (d,i) => colorScale(d.partyCode))
-				.merge(circle)
-				.transition().duration(100)
-				.attr('r', d => rscale(d.seatswon));
-
-			circle.attr('cx', d => d.x)
-				.attr('cy', d => d.y);
-			circle.exit().remove();
+	const colorScale = d3.scaleOrdinal(d3.schemeCategory20b.concat(d3.schemeCategory20));
+	d3.csv('election_result.csv', format, data =>{
+		houseData = data;
+		data.map(d => {
+			years.add(d.year);
+			partyCode.add(d.partyCode);
 		});
-}
+		colorScale.domain(partyCode);
+		startTimer();
+	});
 
-function updateScatterPlot(evt) {
-	drawScatterPlot(houseData, +this.value);
-}
-
-function startTimer() {
-	if(!timerId){
-		let yr = Array.from(years.values());
-		let i = 0;
-		drawScatterPlot(houseData, yr[i]);
-		yearLabel.textContent = yr[i];
-		timerId = setInterval(function() {
-			i++;
-			if(i >= yr.length) {
-				clearInterval(timerId);	
-				timerId = null;
-			} else {
-				console.log(yr[i]);
-				drawScatterPlot(houseData, yr[i]);
-				yearLabel.textContent = yr[i];
-			}
-		}, 5000, i);
+	function format(d) {
+		return {
+			partyCode : d.partyCode,
+			partyName: d.partyName,
+			seatswon: +d.seatswon,
+			year: +d.electionYear
+		}; 
 	}
-}
+
+	function drawScatterPlot(data, year) {
+		const result = data.filter(d => d.year === year);
+		rscale.domain(d3.extent(result, d => d.seatswon));
+		legends.innerHTML = result.map(d => `<li><span style="background-color:${partyColor[d.partyCode] || colorScale(d.partyCode)};"></span>${d.partyName}</li>`).join('');
+		const simulation = d3.forceSimulation(result);
+
+		const circle = svg.selectAll('circle')
+			.data(result, d => d.partyCode);
+		circle.enter()
+			.append('circle')
+			.attr('fill', (d,i) => partyColor[d.partyCode] || colorScale(d.partyCode))
+			.merge(circle)
+			.transition().duration(100)
+			.attr('r', d => rscale(d.seatswon));
+
+		const partyText = svg.selectAll('text')
+			.data(result, d => d.partyCode)
+		
+		partyText.enter()
+			.append('text')
+			.text(d => d.partyCode);
+
+		circle.exit().remove();
+		partyText.exit().remove();
+
+		simulation.force('center', d3.forceCenter(width / 2, height / 2))
+			.force('charge', d3.forceManyBody())
+			.on('tick', () => {
+				svg.selectAll('circle').attr('cx', d => d.x)
+					.attr('cy', d => d.y)
+				svg.selectAll('text').attr('x', d => d.x)
+					.attr('y', d => d.y)
+					.attr('dx', d => -12)
+					.attr('dy', d => 5)
+			});
+	}
+
+	function updateScatterPlot(evt) {
+		drawScatterPlot(houseData, +this.value);
+	}
+
+	function startTimer() {
+		if(!timerId){
+			let yr = Array.from(years.values());
+			let i = 0;
+			drawScatterPlot(houseData, yr[i]);
+			yearLabel.textContent = yr[i];
+			timerId = setInterval(function() {
+				i++;
+				if(i >= yr.length) {
+					clearInterval(timerId);	
+					timerId = null;
+				} else {
+					console.log(yr[i]);
+					drawScatterPlot(houseData, yr[i]);
+					yearLabel.textContent = yr[i];
+				}
+			}, 5000, i);
+		}
+	}
 </script>
 </html>
